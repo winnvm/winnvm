@@ -10,10 +10,11 @@ namespace WinNvm
         public static void Main(string[] args)
         {
 
+            NvmUtils.LoadRcJson();
+
             var shouldShowHelp = false;
             var isInstall = false;
             var isUse = false;
-            var verToUse = "";
             var showVersion = false;
 
             // thses are the available options, not that they set the variables
@@ -49,7 +50,7 @@ namespace WinNvm
             catch (OptionException e)
             {
                 Console.WriteLine(e.Message);
-                Console.WriteLine("Try 'winnvm --help' for more information.");
+                Console.WriteLine("ERR: Try 'winnvm --help' for more information.");
                 Environment.Exit(2);
             }
 
@@ -60,9 +61,9 @@ namespace WinNvm
 
             if(isInstall && isUse)
             {
-                Console.WriteLine("Cannot use install and use same time");
+                Console.WriteLine("ERR: Cannot use install and use same time");
                 NvmUtils.ShowHelp(options);
-                Environment.Exit(505);
+                Environment.Exit(3);
             }
 
             if (shouldShowHelp || extra == null || extra.Count < 1)
@@ -73,16 +74,21 @@ namespace WinNvm
 
             if (isInstall)
             {
-                verToUse = extra[0];
+                var verToUse = extra[0];
                 try
                 {
-                    NvmUtils.validateNodeVersion(verToUse);
+                    NvmUtils.ValidateNodeVersionAndDownload(verToUse);
                 }
                 catch(Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine("ERR: "+e.Message);
                     Environment.Exit(2);
                 }
+            }
+
+            if (isUse)
+            {
+                Console.WriteLine("");
             }
         }
 

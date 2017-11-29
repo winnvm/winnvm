@@ -55,7 +55,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NodeVersions.cs" />
+    <Compile Include="Constants.cs" />
+    <Compile Include="DataObjects.cs" />
     <Compile Include="NvmUtils.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
