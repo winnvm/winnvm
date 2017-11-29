@@ -32,10 +32,13 @@ namespace WinNvm
 
             using (var webClient = new WebClient())
             {
-                //JsonArrayAttribute versionJson;
+                List<NodeVersions> versionJson;
                 var json = webClient.DownloadString("http://repository.emirates.com/repository/raw-nodejs-org/dist/index.json");
-                versionJson = JsonConvert.DeserializeObject<>(json);
-                Console.WriteLine(versionJson);
+                versionJson = JsonConvert.DeserializeObject<List<NodeVersions>>(json);
+                foreach (var v in versionJson)
+                {
+                    Console.WriteLine(v.version);
+                }
             }
 
         }

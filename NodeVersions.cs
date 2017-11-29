@@ -8,12 +8,7 @@ namespace WinNvm
 {
     class NodeVersions
     {
-        private List<NodeVersion> versions;
-    }
-
-    class NodeVersion
-    {
-        private string version;
-        private string date;
+        public string version { get; set; }
+        public string date { get; set; }
     }
 }
