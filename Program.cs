@@ -9,9 +9,6 @@ namespace WinNvm
         
         public static void Main(string[] args)
         {
-
-            NvmUtils.LoadRcJson();
-
             var shouldShowHelp = false;
             var isInstall = false;
             var isUse = false;
@@ -57,6 +54,17 @@ namespace WinNvm
             if (showVersion)
             {
                 NvmUtils.PrintVersion();
+            }
+
+            try
+            {
+                NvmUtils.LoadRcJson();
+                NvmUtils.ValidateEnvironment();
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine("ERR: "+exception.Message);
+                Environment.Exit(2);
             }
 
             if(isInstall && isUse)
