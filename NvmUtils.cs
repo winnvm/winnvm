@@ -12,8 +12,11 @@ namespace WinNvm
     {
         internal static void PrintVersion()
         {
-            Console.WriteLine(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + " " +
-                              System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+            Console.WriteLine(
+                System.Reflection.Assembly.GetExecutingAssembly().GetName().Name 
+                + " " +
+                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version
+            );
         }
 
         internal static void ShowHelp(OptionSet options)
@@ -51,20 +54,41 @@ namespace WinNvm
                     }
                     throw new WinNvmException(exception.Message);
                 }
-                var versionJson = JsonConvert.DeserializeObject<List<NodeVersions>>(json);
+                var versionJson = JsonConvert.DeserializeObject<List<NodeVersions>>(json).OrderBy(o=>o.Date).ToList();
                 var tmpVersion = versionJson.Where(v => v.Version.Equals('v' + verToInstall));
+                var nodeVersionses = tmpVersion as NodeVersions[] ?? tmpVersion.ToArray();
 
-                if (!tmpVersion.Any())
+                if (!nodeVersionses.Any())
                 {
                     throw new WinNvmException("Node version " + verToInstall + " is not available");
                 }
 
-                urlToDownload = Constants.RcFileData.NodeMirror + "/v" + verToInstall + "/node-v" + verToInstall +
-                                "-win-x64.zip";
+                urlToDownload = GetDownloadUrl(verToInstall);
+                var fileNameForSaving = GetSavePath(verToInstall);
+                Console.WriteLine("Downloading :{0}",urlToDownload +" -> "+fileNameForSaving);
+                webClient.DownloadFile(urlToDownload,fileNameForSaving);
+                Console.WriteLine("Downloaded");
 
-                webClient.DownloadFile(urlToDownload,"/Users/karthik/Dev/Temp"+Path.DirectorySeparatorChar+"node-v" + verToInstall +
-                "-win-x64.zip");
+                ExtractToNvmHome();
             }
+        }
+
+        private static void ExtractToNvmHome()
+        {
+
+            throw new NotImplementedException();
+        }
+
+        private static string GetDownloadUrl(string verToInstall)
+        {
+            var fileName = Environment.Is64BitOperatingSystem ? "-win-x64.zip" : "-win-x86.zip";
+            return Constants.RcFileData.NodeMirror + "/v" + verToInstall + "/node-v" + verToInstall +fileName;
+        }
+
+        private static string GetSavePath(string verToInstall)
+        {
+            var fileName = Environment.Is64BitOperatingSystem ? "-win-x64.zip" : "-win-x86.zip";
+            return Path.GetTempPath() +  "node-v" + verToInstall + fileName;
         }
 
         internal static void LoadRcJson()
@@ -85,6 +109,23 @@ namespace WinNvm
             {
                 Constants.RcFileData = new RCFileData {NodeMirror = "https://nodejs.org/dist"};
             }
+        }
+
+        public static void ValidateEnvironment()
+        {
+            var tmpHome = Environment.GetEnvironmentVariable("NVM_HOME");
+            var tmpSymLink = Environment.GetEnvironmentVariable("NVM_SYM_LINK");
+
+            if (string.IsNullOrEmpty(tmpHome))
+            {
+                throw new WinNvmException("NVM_HOME is not defined please create a environment variable named NVM_HOME");
+            }
+
+            if (string.IsNullOrEmpty(tmpSymLink))
+            {
+                throw new WinNvmException("NVM_SYM_LINK is not defined please create a environment variable named NVM_SYM_LINK");
+            }
+
         }
     }
 }
