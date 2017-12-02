@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using Ionic.Zip;
 
 namespace WinNvm
 {
@@ -69,14 +70,21 @@ namespace WinNvm
                 webClient.DownloadFile(urlToDownload,fileNameForSaving);
                 Console.WriteLine("Downloaded");
 
-                ExtractToNvmHome();
+                Console.WriteLine("Extracting");
+                ExtractToNvmHome(fileNameForSaving,verToInstall);
+                Console.WriteLine("Folder Extracted");
             }
         }
 
-        private static void ExtractToNvmHome()
+        private static void ExtractToNvmHome(string zipFileName,string verToInstall)
         {
+            using (var zipFile = ZipFile.Read(zipFileName))
+            {
+                zipFile.ExtractAll(Environment.GetEnvironmentVariable("NVM_HOME"));
+            }
 
-            throw new NotImplementedException();
+            Directory.Move(Environment.GetEnvironmentVariable("NVM_HOME")+"node-v"+verToInstall+"-win-x64"
+                ,Environment.GetEnvironmentVariable("NVM_HOME")+'v'+verToInstall);
         }
 
         private static string GetDownloadUrl(string verToInstall)
