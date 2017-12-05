@@ -1,12 +1,11 @@
-﻿using Mono.Options;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Mono.Options;
 
 namespace WinNvm
 {
     internal class Program
     {
-        
         public static void Main(string[] args)
         {
             var shouldShowHelp = false;
@@ -15,16 +14,17 @@ namespace WinNvm
             var showVersion = false;
 
             // thses are the available options, not that they set the variables
-            var options = new OptionSet {
+            var options = new OptionSet
+            {
                 {
                     "i|install",
                     "To install a new version of NodeJS",
-                    ver => { isInstall=true; }
+                    ver => { isInstall = true; }
                 },
                 {
                     "u|use <version>",
                     "To use the given version of NodeJS",
-                    ver => { isUse=true; }
+                    ver => { isUse = true; }
                 },
                 {
                     "h|help",
@@ -52,9 +52,7 @@ namespace WinNvm
             }
 
             if (showVersion)
-            {
                 NvmUtils.PrintVersion();
-            }
 
             try
             {
@@ -63,11 +61,11 @@ namespace WinNvm
             }
             catch (Exception exception)
             {
-                Console.WriteLine("ERR: "+exception.Message);
+                Console.WriteLine("ERR: " + exception.Message);
                 Environment.Exit(2);
             }
 
-            if(isInstall && isUse)
+            if (isInstall && isUse)
             {
                 Console.WriteLine("ERR: Cannot use install and use same time");
                 NvmUtils.ShowHelp(options);
@@ -87,18 +85,15 @@ namespace WinNvm
                 {
                     NvmUtils.ValidateNodeVersionAndDownload(verToUse);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
-                    Console.WriteLine("ERR: "+e.Message);
+                    Console.WriteLine("ERR: " + e.Message);
                     Environment.Exit(2);
                 }
             }
 
             if (isUse)
-            {
                 Console.WriteLine("");
-            }
         }
-
     }
 }

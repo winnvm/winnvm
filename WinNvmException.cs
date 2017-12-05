@@ -1,6 +1,8 @@
-﻿namespace WinNvm
+﻿using System;
+
+namespace WinNvm
 {
-    class WinNvmException : System.Exception
+    internal class WinNvmException : Exception
     {
         public WinNvmException(string message) : base(message)
         {

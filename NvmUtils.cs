@@ -1,11 +1,12 @@
-﻿using Mono.Options;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using Ionic.Zip;
+using Mono.Options;
+using Newtonsoft.Json;
 
 namespace WinNvm
 {
@@ -14,9 +15,9 @@ namespace WinNvm
         internal static void PrintVersion()
         {
             Console.WriteLine(
-                System.Reflection.Assembly.GetExecutingAssembly().GetName().Name
+                Assembly.GetExecutingAssembly().GetName().Name
                 + " " +
-                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version
+                Assembly.GetExecutingAssembly().GetName().Version
             );
         }
 
@@ -34,9 +35,7 @@ namespace WinNvm
             var urlToDownload = Constants.RcFileData.NodeMirror + "/index.json";
 
             if (verToInstall == "e")
-            {
                 throw new WinNvmException("Invalid Version " + verToInstall);
-            }
 
             using (var webClient = new WebClient())
             {
@@ -48,11 +47,9 @@ namespace WinNvm
                 catch (WebException exception)
                 {
                     if (((HttpWebResponse) exception.Response).StatusCode == HttpStatusCode.NotFound)
-                    {
                         throw new WinNvmException("Cannot access " + urlToDownload +
                                                   ".\nPlease check the NodeMirror property in " + Constants.RcFileName +
                                                   " in your home directory.\nAlso check you network connection");
-                    }
                     throw new WinNvmException(exception.Message);
                 }
                 var versionJson = JsonConvert.DeserializeObject<List<NodeVersions>>(json).OrderBy(o => o.Date).ToList();
@@ -60,9 +57,7 @@ namespace WinNvm
                 var nodeVersionses = tmpVersion as NodeVersions[] ?? tmpVersion.ToArray();
 
                 if (!nodeVersionses.Any())
-                {
                     throw new WinNvmException("Node version " + verToInstall + " is not available");
-                }
 
                 urlToDownload = GetDownloadUrl(verToInstall);
                 var fileNameForSaving = GetSavePath(verToInstall);
@@ -83,17 +78,13 @@ namespace WinNvm
             var rcFile = homePath + Path.DirectorySeparatorChar + Constants.RcFileName;
 
             if (File.Exists(rcFile))
-            {
                 using (var r = new StreamReader(rcFile))
                 {
                     var json = r.ReadToEnd();
                     Constants.RcFileData = JsonConvert.DeserializeObject<RCFileData>(json);
                 }
-            }
             else
-            {
                 Constants.RcFileData = new RCFileData {NodeMirror = "https://nodejs.org/dist"};
-            }
         }
 
         private static void ExtractToNvmHome(string zipFileName, string verToInstall)
@@ -114,7 +105,7 @@ namespace WinNvm
 
         private static string GetSavePath(string verToInstall)
         {
-            return Path.GetTempPath() + "node-v" + verToInstall +GetFileName();
+            return Path.GetTempPath() + "node-v" + verToInstall + GetFileName();
         }
 
         private static string GetFileName()
@@ -128,16 +119,12 @@ namespace WinNvm
             Constants.NvmSymLink = Environment.GetEnvironmentVariable("NVM_SYM_LINK");
 
             if (string.IsNullOrEmpty(Constants.NvmHome))
-            {
                 throw new WinNvmException(
                     "NVM_HOME is not defined please create a environment variable named NVM_HOME");
-            }
 
             if (string.IsNullOrEmpty(Constants.NvmSymLink))
-            {
                 throw new WinNvmException(
                     "NVM_SYM_LINK is not defined please create a environment variable named NVM_SYM_LINK");
-            }
         }
     }
 }
