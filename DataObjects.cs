@@ -9,7 +9,7 @@ namespace WinNvm
         public List<string> Files { get; set; }
     }
 
-    public class RCFileData
+    public class RcFileData
     {
         public string NodeMirror { get; set; }
     }
