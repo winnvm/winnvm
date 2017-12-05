@@ -17,7 +17,7 @@ namespace WinNvm
             var options = new OptionSet
             {
                 {
-                    "i|install",
+                    "i|install <version>",
                     "To install a new version of NodeJS",
                     ver => { isInstall = true; }
                 },
@@ -72,15 +72,27 @@ namespace WinNvm
                 Environment.Exit(3);
             }
 
-            if (shouldShowHelp || extra == null || extra.Count < 1)
+            if (shouldShowHelp)
             {
                 NvmUtils.ShowHelp(options);
                 Environment.Exit(0);
             }
 
+            if(extra == null || extra.Count < 1)
+            {
+                if (!showVersion)
+                {
+                    NvmUtils.ShowHelp(options);
+                } 
+
+                Environment.Exit(0);
+            }
+
+            var verToUse = extra[0];
+
             if (isInstall)
             {
-                var verToUse = extra[0];
+               
                 try
                 {
                     NvmUtils.ValidateNodeVersionAndDownload(verToUse);
@@ -93,7 +105,19 @@ namespace WinNvm
             }
 
             if (isUse)
-                Console.WriteLine("");
+            {
+                try
+                {
+                    NvmUtils.ValidateNodeVersionAndUse(verToUse);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("ERR: " + e.Message);
+                    Environment.Exit(2);
+                }
+            }   
+                
+            Environment.Exit(0);
         }
     }
 }
