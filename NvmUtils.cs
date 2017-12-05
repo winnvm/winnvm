@@ -34,9 +34,6 @@ namespace WinNvm
         {
             var urlToDownload = Constants.RcFileData.NodeMirror + "/index.json";
 
-            if (verToInstall == "e")
-                throw new WinNvmException("Invalid Version " + verToInstall);
-
             using (var webClient = new WebClient())
             {
                 string json;
@@ -61,7 +58,7 @@ namespace WinNvm
 
                 urlToDownload = GetDownloadUrl(verToInstall);
                 var fileNameForSaving = GetSavePath(verToInstall);
-                Console.WriteLine("Downloading :{0}", urlToDownload + " -> " + fileNameForSaving);
+                Console.WriteLine("Downloading :{0} -> {1}", urlToDownload, fileNameForSaving);
                 webClient.DownloadFile(urlToDownload, fileNameForSaving);
                 Console.WriteLine("Downloaded");
 
@@ -91,11 +88,12 @@ namespace WinNvm
         {
             using (var zipFile = ZipFile.Read(zipFileName))
             {
-                zipFile.ExtractAll(Environment.GetEnvironmentVariable("NVM_HOME"));
+                zipFile.ExtractExistingFile = ExtractExistingFileAction.Throw;
+                zipFile.ExtractAll(Environment.GetEnvironmentVariable(Constants.NvmHomeVarName));
             }
 
-            Directory.Move(Environment.GetEnvironmentVariable("NVM_HOME") + "node-v" + verToInstall + "-win-x64"
-                , Environment.GetEnvironmentVariable("NVM_HOME") + 'v' + verToInstall);
+            Directory.Move(Environment.GetEnvironmentVariable(Constants.NvmHomeVarName) + "node-v" + verToInstall + "-win-x64"
+                , Environment.GetEnvironmentVariable(Constants.NvmHomeVarName) + 'v' + verToInstall);
         }
 
         private static string GetDownloadUrl(string verToInstall)
@@ -115,16 +113,16 @@ namespace WinNvm
 
         internal static void ValidateEnvironment()
         {
-            Constants.NvmHome = Environment.GetEnvironmentVariable("NVM_HOME");
-            Constants.NvmSymLink = Environment.GetEnvironmentVariable("NVM_SYM_LINK");
+            Constants.NvmHome = Environment.GetEnvironmentVariable(Constants.NvmHomeVarName);
+            Constants.NvmSymLink = Environment.GetEnvironmentVariable(Constants.NvmSymLinkVarName);
 
             if (string.IsNullOrEmpty(Constants.NvmHome))
-                throw new WinNvmException(
-                    "NVM_HOME is not defined please create a environment variable named NVM_HOME");
+                throw new WinNvmException(Constants.NvmHomeVarName+
+                    " is not defined please create a environment variable named "+Constants.NvmHomeVarName);
 
             if (string.IsNullOrEmpty(Constants.NvmSymLink))
-                throw new WinNvmException(
-                    "NVM_SYM_LINK is not defined please create a environment variable named NVM_SYM_LINK");
+                throw new WinNvmException(Constants.NvmSymLinkVarName+
+                    " is not defined please create a environment variable named "+ Constants.NvmSymLinkVarName);
         }
     }
 }
