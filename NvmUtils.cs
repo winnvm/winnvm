@@ -21,7 +21,6 @@ namespace WinNvm
                 Assembly.GetExecutingAssembly().GetName().Version
             );
         }
-
         internal static void ShowHelp(OptionSet options)
         {
             Console.WriteLine();
@@ -30,7 +29,31 @@ namespace WinNvm
             Console.WriteLine("Options:");
             options.WriteOptionDescriptions(Console.Out);
         }
+        internal static void LoadRcJson()
+        {
+            var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
+            var rcFile = homePath + Path.DirectorySeparatorChar + Constants.RcFileName;
+
+            if (File.Exists(rcFile))
+            {
+                using (var r = new StreamReader(rcFile))
+                {
+                    var json = r.ReadToEnd();
+                    Constants.RcFileData = JsonConvert.DeserializeObject<RCFileData>(json);
+                }
+            }
+
+            if (Constants.RcFileData == null || string.IsNullOrEmpty(Constants.RcFileData.NodeMirror))
+            {
+                Constants.RcFileData = new RCFileData { NodeMirror = "https://nodejs.org/dist/" };
+            }
+
+            if (!Constants.RcFileData.NodeMirror.EndsWith("/"))
+            {
+                Constants.RcFileData.NodeMirror = Constants.RcFileData.NodeMirror + "/";
+            }
+        }
         internal static void ValidateNodeVersionAndDownload(string verToInstall)
         {
             var urlToDownload = Constants.RcFileData.NodeMirror + "/index.json";
@@ -69,27 +92,11 @@ namespace WinNvm
             }
         }
 
-        internal static void LoadRcJson()
-        {
-            var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-            var rcFile = homePath + Path.DirectorySeparatorChar + Constants.RcFileName;
-
-            if (File.Exists(rcFile))
-                using (var r = new StreamReader(rcFile))
-                {
-                    var json = r.ReadToEnd();
-                    Constants.RcFileData = JsonConvert.DeserializeObject<RCFileData>(json);
-                }
-            else
-                Constants.RcFileData = new RCFileData {NodeMirror = "https://nodejs.org/dist"};
-        }
-
         private static void ExtractToNvmHome(string zipFileName, string verToInstall)
         {
             using (var zipFile = ZipFile.Read(zipFileName))
             {
-                var appPath = Environment.GetEnvironmentVariable(Constants.NvmHomeVarName) + "v" + verToInstall;
+                var appPath = Constants.NvmHome + "v" + verToInstall;
                 zipFile.ToList().ForEach(entry =>
                 {
                     if (entry.FileName.StartsWith("node-v" + verToInstall + GetFileNameWithoutZip()))
@@ -103,7 +110,7 @@ namespace WinNvm
 
         private static string GetDownloadUrl(string verToInstall)
         {
-            return Constants.RcFileData.NodeMirror + "/v" + verToInstall + "/node-v" + verToInstall + GetFileName();
+            return Constants.RcFileData.NodeMirror + "v" + verToInstall + "/node-v" + verToInstall + GetFileName();
         }
 
         private static string GetSavePath(string verToInstall)
@@ -135,13 +142,22 @@ namespace WinNvm
                 throw new WinNvmException(Constants.NvmSymLinkVarName +
                                           " is not defined please create a environment variable named " +
                                           Constants.NvmSymLinkVarName);
+
+            if (!Constants.NvmHome.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
+                Constants.NvmHome = Constants.NvmHome + Path.DirectorySeparatorChar;
+            }
+            if (!Constants.NvmSymLink.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
+                Constants.NvmSymLink = Constants.NvmSymLink + Path.DirectorySeparatorChar;
+            }
         }
 
         public static void ValidateNodeVersionAndUse(string verToUse)
         {
 
-            var src = Environment.GetEnvironmentVariable(Constants.NvmHomeVarName) + 'v' + verToUse;
-            var dest = Environment.GetEnvironmentVariable(Constants.NvmSymLinkVarName);
+            var src = Constants.NvmHome + 'v' + verToUse;
+            var dest = Constants.NvmSymLink;
 
             if (!Directory.Exists(src))
             {
@@ -153,14 +169,16 @@ namespace WinNvm
                 Directory.Delete(dest);
             }
 
-            var cmd = Path.Combine(Environment.SystemDirectory, "cmd.exe"); ;
+            var cmd = Path.Combine(Environment.SystemDirectory, "cmd.exe");
+
+            Console.WriteLine("{0} {1}",cmd, "/c mklink /J " + dest + " " + src);
+
             var psInfo = new ProcessStartInfo(cmd, "/c mklink /J " + dest + " " + src)
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
                 RedirectStandardOutput = true,
                 UseShellExecute = false
             };
-
 
             var getIpInfo = Process.Start(psInfo);
 
