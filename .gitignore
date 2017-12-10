@@ -294,3 +294,12 @@ __pycache__/
 *.xsd.cs
 
 # End of https://www.gitignore.io/api/csharp
+
+# Created by https://www.gitignore.io/api/jekyll
+
+### Jekyll ###
+_site/
+.sass-cache/
+.jekyll-metadata
+
+# End of https://www.gitignore.io/api/jekyll
