@@ -3,7 +3,7 @@ baseurl: "/winnvm"
 output: web
 topnav_title: WinNvm
 site_title: Windows NodeJS Version Manager
-company_name: WinNvm
+company_name: Karthikeyan Vaithilingam
 github_editme_path: seenukarthi/winnvm/blob/master/docs/
 disqus_shortname: seenukarthi
 google_analytics: UA-38595132-1
@@ -61,12 +61,10 @@ defaults:
 
 sidebars:
 - home_sidebar
-- mydoc_sidebar
-- product1_sidebar
-- product2_sidebar
-- other
+- winnvm_100_sidebar
 
-description: "Intended as a documentation theme based on Jekyll for technical writers documenting software and other technical products, this theme has all the elements you would need to handle multiple products with both multi-level sidebar navigation, tags, and other documentation features."
+
+description: "NodeJs version manager for Windows"
 # the description is used in the feed.xml file
 
 # needed for sitemap.xml file only
