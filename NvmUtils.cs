@@ -40,13 +40,13 @@ namespace WinNvm
                 using (var r = new StreamReader(rcFile))
                 {
                     var json = r.ReadToEnd();
-                    Constants.RcFileData = JsonConvert.DeserializeObject<RCFileData>(json);
+                    Constants.RcFileData = JsonConvert.DeserializeObject<RcFileData>(json);
                 }
             }
 
             if (Constants.RcFileData == null || string.IsNullOrEmpty(Constants.RcFileData.NodeMirror))
             {
-                Constants.RcFileData = new RCFileData { NodeMirror = "https://nodejs.org/dist/" };
+                Constants.RcFileData = new RcFileData { NodeMirror = "https://nodejs.org/dist/" };
             }
 
             if (!Constants.RcFileData.NodeMirror.EndsWith("/"))
