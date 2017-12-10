@@ -1,17 +1,17 @@
 repository: tomjoht/documentation-theme-jekyll
 baseurl: "/winnvm"
 output: web
-topnav_title: Jekyll Documentation Theme
-site_title: Jekyll theme for documentation
-company_name: Your company
-github_editme_path: tomjoht/documentation-theme-jekyll/blob/gh-pages/
+topnav_title: WinNvm
+site_title: Windows NodeJS Version Manager
+company_name: WinNvm
+github_editme_path: seenukarthi/winnvm/blob/master/docs/
 disqus_shortname: seenukarthi
 google_analytics: UA-38595132-1
 exclude:
   - .idea/
   - .gitignore
-feedback_subject_line: Jekyll documentation theme
-feedback_email: tomjoht@gmail.com
+feedback_subject_line: Windows NodeJS Version Manager
+feedback_email: seenukarthi@gmail.com
 highlighter: rouge
 
 markdown: kramdown
@@ -70,4 +70,4 @@ description: "Intended as a documentation theme based on Jekyll for technical wr
 # the description is used in the feed.xml file
 
 # needed for sitemap.xml file only
-url: http://idratherbewriting.com
+url: https://seenukarthi.com/winnvm/

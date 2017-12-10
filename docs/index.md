@@ -2,7 +2,7 @@
 title: "Getting started with the Documentation Theme for Jekyll"
 keywords: sample homepage
 tags: [getting_started]
-sidebar: mydoc_sidebar
+sidebar: winnvm_100_sidebar
 permalink: index.html
 summary: These brief instructions will help you get started quickly with the theme. The other topics in this help provide additional information and detail about working with other aspects of this theme and Jekyll.
 ---
@@ -89,7 +89,7 @@ The top navigation usually remains the same, because it allows users to navigate
 
 In each page's frontmatter, you must specify the sidebar you want that page to use. Here's an example of the page frontmatter showing the sidebar property:
 
-<pre>
+``` txt
 ---
 title: Alerts
 tags: [formatting]
@@ -99,7 +99,7 @@ summary: "You can insert notes, tips, warnings, and important alerts in your con
 <span class="red">sidebar: mydoc_sidebar</span>
 permalink: mydoc_alerts
 ---
-</pre>
+```
 
 The `sidebar: mydoc_sidebar` refers to the \_data/sidebars/mydoc_sidebar.yml file.
 
