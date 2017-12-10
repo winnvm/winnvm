@@ -5,10 +5,8 @@ topnav_title: Jekyll Documentation Theme
 site_title: Jekyll theme for documentation
 company_name: Your company
 github_editme_path: tomjoht/documentation-theme-jekyll/blob/gh-pages/
-disqus_shortname: idrbwjekyll
-google_analytics: UA-66296557-1
-host: 127.0.0.1
-port: 4000
+disqus_shortname: seenukarthi
+google_analytics: UA-38595132-1
 exclude:
   - .idea/
   - .gitignore
