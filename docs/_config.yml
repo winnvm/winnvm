@@ -1,5 +1,4 @@
 repository: tomjoht/documentation-theme-jekyll
-baseurl: "/winnvm"
 output: web
 topnav_title: WinNvm
 site_title: Windows NodeJS Version Manager
