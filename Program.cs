@@ -1,58 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using Mono.Options;
 
 namespace WinNvm
 {
-    internal class Program
+    internal static class Program
     {
         public static void Main(string[] args)
         {
-            var shouldShowHelp = false;
-            var isInstall = false;
-            var isUse = false;
-            var showVersion = false;
-
-            // thses are the available options, not that they set the variables
-            var options = new OptionSet
-            {
-                {
-                    "i|install <version>",
-                    "To install a new version of NodeJS",
-                    ver => { isInstall = true; }
-                },
-                {
-                    "u|use <version>",
-                    "To use the given version of NodeJS",
-                    ver => { isUse = true; }
-                },
-                {
-                    "h|help",
-                    "Show this message",
-                    h => shouldShowHelp = h != null
-                },
-                {
-                    "v|version",
-                    "Display Version",
-                    version => showVersion = true
-                }
-            };
-
-
-            List<string> extra = null;
-            try
-            {
-                extra = options.Parse(args);
-            }
-            catch (OptionException e)
-            {
-                Console.WriteLine(e.Message);
-                Console.WriteLine("ERR: Try 'winnvm --help' for more information.");
-                Environment.Exit(2);
-            }
-
-            if (showVersion)
-                NvmUtils.PrintVersion();
 
             try
             {
@@ -65,58 +19,87 @@ namespace WinNvm
                 Environment.Exit(2);
             }
 
-            if (isInstall && isUse)
+            // thses are the available options, not that they set the variables
+            var options = new OptionSet
             {
-                Console.WriteLine("ERR: Cannot use install and use same time");
-                NvmUtils.ShowHelp(options);
-                Environment.Exit(3);
-            }
-
-            if (shouldShowHelp)
-            {
-                NvmUtils.ShowHelp(options);
-                Environment.Exit(0);
-            }
-
-            if(extra == null || extra.Count < 1)
-            {
-                if (!showVersion)
                 {
-                    NvmUtils.ShowHelp(options);
-                } 
-
-                Environment.Exit(0);
-            }
-
-            var verToUse = extra[0];
-
-            if (isInstall)
-            {
-               
-                try
+                    "i|install=",
+                    "To install a new version of NodeJS",
+                    ver => 
+                    {
+                        try
+                        {
+                            NvmUtils.ValidateNodeVersionAndDownload(ver);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("ERR: " + e.Message);
+                            Environment.Exit(2);
+                        }
+                    }
+                },
                 {
-                    NvmUtils.ValidateNodeVersionAndDownload(verToUse);
+                    "u|use=",
+                    "To use the given version of NodeJS",
+                    ver =>
+                    {
+                        try
+                        {
+                            NvmUtils.ValidateNodeVersionAndUse(ver);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("ERR: " + e.Message);
+                            Environment.Exit(2);
+                        }
+                    }
+                },
+                {
+                    "r|remove=",
+                    "To uninstall a version of NodeJS",
+                    ver =>
+                    {
+                        try
+                        {
+                            NvmUtils.UninstallNodeJs(ver);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("ERR: " + e.Message);
+                            Environment.Exit(2);
+                        }
+                    }
+                },
+                {
+                    "h|help",
+                    "Show this message",
+                    h =>
+                    {
+                        NvmUtils.ShowHelp();
+                        Environment.Exit(0);
+                    }
+                },
+                {
+                    "v|version",
+                    "Display Version",
+                    version => NvmUtils.PrintVersion()
                 }
-                catch (Exception e)
+            };
+
+            try
+            {
+                var extra = options.Parse(args);
+                if (extra != null && extra.Count > 0)
                 {
-                    Console.WriteLine("ERR: " + e.Message);
-                    Environment.Exit(2);
+                    throw new WinNvmException("Invalid options");
                 }
             }
-
-            if (isUse)
+            catch (Exception e)
             {
-                try
-                {
-                    NvmUtils.ValidateNodeVersionAndUse(verToUse);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("ERR: " + e.Message);
-                    Environment.Exit(2);
-                }
-            }   
-                
+                Console.WriteLine(e.Message);
+                Console.WriteLine("ERR: Try 'winnvm --help' for more information.");
+                Environment.Exit(2);
+            }
             Environment.Exit(0);
         }
     }
