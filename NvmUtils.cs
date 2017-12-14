@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using Ionic.Zip;
 using Newtonsoft.Json;
 
@@ -34,6 +36,11 @@ namespace WinNvm
             return Constants.RcFileData.NodeMirror + "v" + verToInstall + "/node-v" + verToInstall + GetFileName();
         }
 
+        private static string GetShaSumUrl(string verToInstall)
+        {
+            return Constants.RcFileData.NodeMirror + "v" + verToInstall + "/SHASUMS256.txt";
+        }
+        
         private static string GetSavePath(string verToInstall)
         {
             return Path.GetTempPath() + "v" + verToInstall + ".zip";
@@ -97,6 +104,30 @@ namespace WinNvm
                 Constants.RcFileData.NodeMirror = Constants.RcFileData.NodeMirror + "/";
             }
         }
+        
+        private static string GetChecksumFile(string fileName)
+        {
+            var fileStream = new FileStream(fileName, FileMode.OpenOrCreate,
+                FileAccess.Read);
+            
+            using (var bufferedStream = new BufferedStream(fileStream, 1024 * 32))
+            {
+                var sha = new SHA256Managed();
+                var checksum = sha.ComputeHash(bufferedStream);
+                return BitConverter.ToString(checksum).Replace("-", string.Empty);
+            }
+        }
+        
+        private static void ValidateSha256Sum(string fileNameForSaving, string shaInfo)
+        {
+            if (shaInfo == null) throw new ArgumentNullException(nameof(shaInfo));
+            var shaSumForFile = GetChecksumFile(fileNameForSaving);
+            if (!shaInfo.ToUpper().Equals(shaSumForFile.ToUpper()))
+            {
+                throw new WinNvmException("SHA256 Checksum failed");
+            }
+        }
+
 
         internal static void ValidateNodeVersionAndDownload(string verToInstall)
         {
@@ -125,10 +156,16 @@ namespace WinNvm
                     throw new WinNvmException("Node version " + verToInstall + " is not available");
 
                 urlToDownload = GetDownloadUrl(verToInstall);
+                
+                var shaSums =  webClient.DownloadString(GetShaSumUrl(verToInstall)).Split(Environment.NewLine.ToCharArray());
+                var theLine = shaSums.Single(line => line.EndsWith("node-v" + verToInstall + GetFileName()));
+                var shaInfo = Regex.Split(theLine, @"\s+")[0];
                 var fileNameForSaving = GetSavePath(verToInstall);
                 Console.WriteLine("Downloading :{0} -> {1}", urlToDownload, fileNameForSaving);
                 webClient.DownloadFile(urlToDownload, fileNameForSaving);
                 Console.WriteLine("Downloaded");
+
+                ValidateSha256Sum(fileNameForSaving, shaInfo);
 
                 Console.WriteLine("Extracting");
                 ExtractToNvmHome(fileNameForSaving, verToInstall);
