@@ -6,13 +6,49 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using Ionic.Zip;
-using Mono.Options;
 using Newtonsoft.Json;
 
 namespace WinNvm
 {
     internal static class NvmUtils
     {
+
+        private static void ExtractToNvmHome(string zipFileName, string verToInstall)
+        {
+            using (var zipFile = ZipFile.Read(zipFileName))
+            {
+                var appPath = Constants.NvmHome + "v" + verToInstall;
+                zipFile.ToList().ForEach(entry =>
+                {
+                    if (entry.FileName.StartsWith("node-v" + verToInstall + GetFileNameWithoutZip()))
+                        entry.FileName =
+                            entry.FileName.Substring(("node-v" + verToInstall + GetFileNameWithoutZip()).Length);
+                    Console.WriteLine(entry.FileName);
+                    entry.Extract(appPath, ExtractExistingFileAction.OverwriteSilently);
+                });
+            }
+        }
+
+        private static string GetDownloadUrl(string verToInstall)
+        {
+            return Constants.RcFileData.NodeMirror + "v" + verToInstall + "/node-v" + verToInstall + GetFileName();
+        }
+
+        private static string GetSavePath(string verToInstall)
+        {
+            return Path.GetTempPath() + "v" + verToInstall + ".zip";
+        }
+
+        private static string GetFileName()
+        {
+            return Environment.Is64BitOperatingSystem ? "-win-x64.zip" : "-win-x86.zip";
+        }
+
+        private static string GetFileNameWithoutZip()
+        {
+            return Environment.Is64BitOperatingSystem ? "-win-x64" : "-win-x86";
+        }
+        
         internal static void PrintVersion()
         {
             Console.WriteLine(
@@ -21,14 +57,21 @@ namespace WinNvm
                 Assembly.GetExecutingAssembly().GetName().Version
             );
         }
-        internal static void ShowHelp(OptionSet options)
+
+        internal static void ShowHelp()
         {
             Console.WriteLine();
             Console.WriteLine("Usage: winnvm [OPTIONS]");
             Console.WriteLine();
             Console.WriteLine("Options:");
-            options.WriteOptionDescriptions(Console.Out);
+            Console.WriteLine(@"
+    -i, --install <verison>    To install a new version of NodeJS
+    -u, --use <version>        To use the given version of NodeJS
+    -r, --remove <version>     To uninstall a version of NodeJS
+    -h, --help                 Show this message
+    -v, --version              Display Version");
         }
+
         internal static void LoadRcJson()
         {
             var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -46,7 +89,7 @@ namespace WinNvm
 
             if (Constants.RcFileData == null || string.IsNullOrEmpty(Constants.RcFileData.NodeMirror))
             {
-                Constants.RcFileData = new RcFileData { NodeMirror = "https://nodejs.org/dist/" };
+                Constants.RcFileData = new RcFileData {NodeMirror = "https://nodejs.org/dist/"};
             }
 
             if (!Constants.RcFileData.NodeMirror.EndsWith("/"))
@@ -54,6 +97,7 @@ namespace WinNvm
                 Constants.RcFileData.NodeMirror = Constants.RcFileData.NodeMirror + "/";
             }
         }
+
         internal static void ValidateNodeVersionAndDownload(string verToInstall)
         {
             var urlToDownload = Constants.RcFileData.NodeMirror + "/index.json";
@@ -92,42 +136,6 @@ namespace WinNvm
             }
         }
 
-        private static void ExtractToNvmHome(string zipFileName, string verToInstall)
-        {
-            using (var zipFile = ZipFile.Read(zipFileName))
-            {
-                var appPath = Constants.NvmHome + "v" + verToInstall;
-                zipFile.ToList().ForEach(entry =>
-                {
-                    if (entry.FileName.StartsWith("node-v" + verToInstall + GetFileNameWithoutZip()))
-                        entry.FileName =
-                            entry.FileName.Substring(("node-v" + verToInstall + GetFileNameWithoutZip()).Length);
-                    Console.WriteLine(entry.FileName);
-                    entry.Extract(appPath, ExtractExistingFileAction.OverwriteSilently);
-                });
-            }
-        }
-
-        private static string GetDownloadUrl(string verToInstall)
-        {
-            return Constants.RcFileData.NodeMirror + "v" + verToInstall + "/node-v" + verToInstall + GetFileName();
-        }
-
-        private static string GetSavePath(string verToInstall)
-        {
-            return Path.GetTempPath() + "v" + verToInstall + ".zip";
-        }
-
-        private static string GetFileName()
-        {
-            return Environment.Is64BitOperatingSystem ? "-win-x64.zip" : "-win-x86.zip";
-        }
-
-        private static string GetFileNameWithoutZip()
-        {
-            return Environment.Is64BitOperatingSystem ? "-win-x64" : "-win-x86";
-        }
-
         internal static void ValidateEnvironment()
         {
             Constants.NvmHome = Environment.GetEnvironmentVariable(Constants.NvmHomeVarName);
@@ -153,15 +161,14 @@ namespace WinNvm
             }
         }
 
-        public static void ValidateNodeVersionAndUse(string verToUse)
+        internal static void ValidateNodeVersionAndUse(string verToUse)
         {
-
             var src = Constants.NvmHome + 'v' + verToUse;
             var dest = Constants.NvmSymLink;
 
             if (!Directory.Exists(src))
             {
-                throw new WinNvmException("Version "+verToUse+ " is not installed.");
+                throw new WinNvmException("Version " + verToUse + " is not installed.");
             }
 
             if (Directory.Exists(dest))
@@ -171,7 +178,7 @@ namespace WinNvm
 
             var cmd = Path.Combine(Environment.SystemDirectory, "cmd.exe");
 
-            Console.WriteLine("{0} {1}",cmd, "/c mklink /J " + dest + " " + src);
+            Console.WriteLine("{0} {1}", cmd, "/c mklink /J " + dest + " " + src);
 
             var psInfo = new ProcessStartInfo(cmd, "/c mklink /J " + dest + " " + src)
             {
@@ -186,8 +193,22 @@ namespace WinNvm
             var myOutput = getIpInfo.StandardOutput;
             getIpInfo.WaitForExit(3000);
             if (getIpInfo.HasExited)
-            { 
+            {
                 Console.WriteLine(myOutput.ReadToEnd());
+            }
+        }
+
+        internal static void UninstallNodeJs(string verToUse)
+        {
+            var src = Constants.NvmHome + 'v' + verToUse;
+            if (Directory.Exists(src))
+            {
+                Directory.Delete(src,true);
+                Console.WriteLine(verToUse+" is uninstalled");
+            }
+            else
+            {
+                throw new WinNvmException("Version "+verToUse+" not installed");
             }
         }
     }
