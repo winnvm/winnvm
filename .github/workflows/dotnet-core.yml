@@ -23,4 +23,4 @@ jobs:
       run: nuget restore 
 
     - name: Build
-      run: msbuild /p:Configuration=Release
+      run: msbuild
