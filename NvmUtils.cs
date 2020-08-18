@@ -194,7 +194,7 @@ namespace WinNvm
                                           Constants.NvmSymLinkVarName);
             }
 
-        if (!Constants.NvmHome.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            if (!Constants.NvmHome.EndsWith(Path.DirectorySeparatorChar.ToString()))
             {
                 Constants.NvmHome = Constants.NvmHome + Path.DirectorySeparatorChar;
             }
