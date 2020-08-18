@@ -19,7 +19,7 @@ namespace WinNvm
                 Environment.Exit(2);
             }
 
-            // thses are the available options, not that they set the variables
+            // These are the available options, not that they set the variables
             var options = new OptionSet
             {
                 {

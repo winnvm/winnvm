@@ -72,7 +72,7 @@ namespace WinNvm
             Console.WriteLine();
             Console.WriteLine("Options:");
             Console.WriteLine(@"
-    -i, --install <verison>    To install a new version of NodeJS
+    -i, --install <version>    To install a new version of NodeJS
     -u, --use <version>        To use the given version of NodeJS
     -r, --remove <version>     To uninstall a version of NodeJS
     -h, --help                 Show this message
@@ -150,10 +150,12 @@ namespace WinNvm
                 }
                 var versionJson = JsonConvert.DeserializeObject<List<NodeVersions>>(json).OrderBy(o => o.Date).ToList();
                 var tmpVersion = versionJson.Where(v => v.Version.Equals('v' + verToInstall));
-                var nodeVersionses = tmpVersion as NodeVersions[] ?? tmpVersion.ToArray();
+                var nodeVersions = tmpVersion as NodeVersions[] ?? tmpVersion.ToArray();
 
-                if (!nodeVersionses.Any())
+                if (!nodeVersions.Any())
+                {
                     throw new WinNvmException("Node version " + verToInstall + " is not available");
+                }
 
                 urlToDownload = GetDownloadUrl(verToInstall);
                 
@@ -179,16 +181,20 @@ namespace WinNvm
             Constants.NvmSymLink = Environment.GetEnvironmentVariable(Constants.NvmSymLinkVarName);
 
             if (string.IsNullOrEmpty(Constants.NvmHome))
+            {
                 throw new WinNvmException(Constants.NvmHomeVarName +
                                           " is not defined please create a environment variable named " +
                                           Constants.NvmHomeVarName);
+            }
 
             if (string.IsNullOrEmpty(Constants.NvmSymLink))
+            {
                 throw new WinNvmException(Constants.NvmSymLinkVarName +
                                           " is not defined please create a environment variable named " +
                                           Constants.NvmSymLinkVarName);
+            }
 
-            if (!Constants.NvmHome.EndsWith(Path.DirectorySeparatorChar.ToString()))
+        if (!Constants.NvmHome.EndsWith(Path.DirectorySeparatorChar.ToString()))
             {
                 Constants.NvmHome = Constants.NvmHome + Path.DirectorySeparatorChar;
             }
