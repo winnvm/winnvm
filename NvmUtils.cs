@@ -15,11 +15,15 @@ namespace WinNvm
     internal static class NvmUtils
     {
 
-        private static void ExtractToNvmHome(string zipFileName, string verToInstall)
+        private static void ExtractToNvmHome(string zipFileName, string verToInstall,string envName)
         {
             using (var zipFile = ZipFile.Read(zipFileName))
             {
                 var appPath = Constants.NvmHome + "v" + verToInstall;
+                if (envName != null && envName.Trim() != string.Empty)
+                {
+                    appPath = Constants.NvmHome + "v" + envName.Trim();
+                }
                 zipFile.ToList().ForEach(entry =>
                 {
                     if (entry.FileName.StartsWith("node-v" + verToInstall + GetFileNameWithoutZip()))
@@ -129,7 +133,7 @@ namespace WinNvm
         }
 
 
-        internal static void ValidateNodeVersionAndDownload(string verToInstall)
+        internal static void ValidateNodeVersionAndDownload(string verToInstall, string envName)
         {
             var urlToDownload = Constants.RcFileData.NodeMirror + "/index.json";
 
@@ -170,7 +174,7 @@ namespace WinNvm
                 ValidateSha256Sum(fileNameForSaving, shaInfo);
 
                 Console.WriteLine("Extracting");
-                ExtractToNvmHome(fileNameForSaving, verToInstall);
+                ExtractToNvmHome(fileNameForSaving, verToInstall,envName);
                 Console.WriteLine("Folder Extracted");
             }
         }
