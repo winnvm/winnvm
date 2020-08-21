@@ -19,23 +19,22 @@ namespace WinNvm
                 Environment.Exit(2);
             }
 
+            var nodeJsVersion = string.Empty;
+            var toInstall = false;
+            var toUse = false;
+            var toUninstall = false;
+            var envName = string.Empty;
+            var showHelp = false;
             // These are the available options, not that they set the variables
             var options = new OptionSet
             {
                 {
                     "i|install=",
                     "To install a new version of NodeJS",
-                    ver => 
+                    ver =>
                     {
-                        try
-                        {
-                            NvmUtils.ValidateNodeVersionAndDownload(ver);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("ERR: " + e.Message);
-                            Environment.Exit(2);
-                        }
+                        nodeJsVersion = ver;
+                        toInstall = true;
                     }
                 },
                 {
@@ -43,15 +42,8 @@ namespace WinNvm
                     "To use the given version of NodeJS",
                     ver =>
                     {
-                        try
-                        {
-                            NvmUtils.ValidateNodeVersionAndUse(ver);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("ERR: " + e.Message);
-                            Environment.Exit(2);
-                        }
+                        nodeJsVersion = ver;
+                        toUse = true;
                     }
                 },
                 {
@@ -59,15 +51,16 @@ namespace WinNvm
                     "To uninstall a version of NodeJS",
                     ver =>
                     {
-                        try
-                        {
-                            NvmUtils.UninstallNodeJs(ver);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("ERR: " + e.Message);
-                            Environment.Exit(2);
-                        }
+                        nodeJsVersion = ver;
+                        toUninstall = true;
+                    }
+                },
+                {
+                    "n|name=",
+                    "Name of the environment.",
+                    name =>
+                    {
+                        envName = name;
                     }
                 },
                 {
@@ -75,8 +68,7 @@ namespace WinNvm
                     "Show this message",
                     h =>
                     {
-                        NvmUtils.ShowHelp();
-                        Environment.Exit(0);
+                        showHelp = true;
                     }
                 },
                 {
@@ -93,6 +85,28 @@ namespace WinNvm
                 {
                     throw new WinNvmException("Invalid options");
                 }
+
+                if (toInstall && toUninstall)
+                {
+                    throw new WinNvmException("Install and Uninstall Options cannot be used together");
+                }
+
+                if (showHelp)
+                {
+                    Console.WriteLine("Usage: winnvm <options>");
+                    options.WriteOptionDescriptions(Console.Out);
+                }
+
+                if (toInstall)
+                {
+                    NvmUtils.ValidateNodeVersionAndDownload(nodeJsVersion,envName);
+                }
+
+                if (toUse)
+                {
+                    NvmUtils.ValidateNodeVersionAndUse(nodeJsVersion);
+                }
+
             }
             catch (Exception e)
             {
