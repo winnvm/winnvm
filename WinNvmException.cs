@@ -7,5 +7,9 @@ namespace WinNvm
         public WinNvmException(string message) : base(message)
         {
         }
+
+        public WinNvmException(string message,params object[] args): base(string.Format(message, args))
+        {
+        }
     }
 }
