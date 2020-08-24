@@ -105,7 +105,7 @@ namespace WinNvm
 
             if (!Constants.RcFileData.NodeMirror.EndsWith("/"))
             {
-                Constants.RcFileData.NodeMirror = Constants.RcFileData.NodeMirror + "/";
+                Constants.RcFileData.NodeMirror += "/";
             }
         }
         
@@ -186,6 +186,9 @@ namespace WinNvm
 
             if (string.IsNullOrEmpty(Constants.NvmHome))
             {
+             throw new WinNvmException(Constants.NvmHomeVarName +
+                                          " is not defined please create a environment variable named " +
+                                          Constants.NvmHomeVarName);
                 throw new WinNvmException(Constants.NvmHomeVarName +
                                           " is not defined please create a environment variable named " +
                                           Constants.NvmHomeVarName);
@@ -200,11 +203,11 @@ namespace WinNvm
 
             if (!Constants.NvmHome.EndsWith(Path.DirectorySeparatorChar.ToString()))
             {
-                Constants.NvmHome = Constants.NvmHome + Path.DirectorySeparatorChar;
+                Constants.NvmHome += Path.DirectorySeparatorChar;
             }
             if (!Constants.NvmSymLink.EndsWith(Path.DirectorySeparatorChar.ToString()))
             {
-                Constants.NvmSymLink = Constants.NvmSymLink + Path.DirectorySeparatorChar;
+                Constants.NvmSymLink += Path.DirectorySeparatorChar;
             }
         }
 

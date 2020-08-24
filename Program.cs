@@ -88,7 +88,7 @@ namespace WinNvm
 
                 if (toInstall && toUninstall)
                 {
-                    throw new WinNvmException("Install and Uninstall Options cannot be used together");
+                    throw new WinNvmException(@"{0} and {1} Options cannot be used together","Install","Uninstall");
                 }
 
                 if (showHelp)
