@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Target Name="ILRepacker" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+        <ItemGroup>
+            <InputAssemblies Include="$(TargetPath)"/>
+            <InputAssemblies Include="@(ReferencePathWithRefAssemblies)" Condition="'%(filename)' == 'Newtonsoft.Json'"/>
+            <InputAssemblies Include="@(ReferencePathWithRefAssemblies)" Condition="'%(filename)' == 'Mono.Options'"/>
+            <InputAssemblies Include="@(ReferencePathWithRefAssemblies)" Condition="'%(filename)' == 'Ionic.Zip'"/>
+        </ItemGroup>
+
+        <ILRepack
+                AllowDuplicateResources="false"
+                DebugInfo="true"
+                Internalize="true"
+                InputAssemblies="@(InputAssemblies)"
+                OutputFile="$(TargetPath)"
+                Parallel="true"
+                TargetKind="SameAsPrimaryAssembly"/>
+    </Target>
+</Project>
