@@ -15,6 +15,6 @@
                 InputAssemblies="@(InputAssemblies)"
                 OutputFile="$(TargetPath)"
                 Parallel="true"
-                TargetKind="SameAsPrimaryAssembly"/>
+                TargetKind="Exe"/>
     </Target>
 </Project>
