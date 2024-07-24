@@ -11,7 +11,6 @@ namespace WinNvm
             try
             {
                 NvmUtils.LoadRcJson();
-                NvmUtils.ValidateEnvironment();
             }
             catch (Exception exception)
             {
@@ -19,7 +18,7 @@ namespace WinNvm
                 Environment.Exit(2);
             }
 
-            // thses are the available options, not that they set the variables
+            // these are the available options, not that they set the variables
             var options = new OptionSet
             {
                 {
@@ -29,6 +28,7 @@ namespace WinNvm
                     {
                         try
                         {
+                            NvmUtils.ValidateEnvironment();
                             NvmUtils.ValidateNodeVersionAndDownload(ver);
                         }
                         catch (Exception e)
@@ -45,6 +45,7 @@ namespace WinNvm
                     {
                         try
                         {
+                            NvmUtils.ValidateEnvironment();
                             NvmUtils.ValidateNodeVersionAndUse(ver);
                         }
                         catch (Exception e)
@@ -61,6 +62,7 @@ namespace WinNvm
                     {
                         try
                         {
+                            NvmUtils.ValidateEnvironment();
                             NvmUtils.UninstallNodeJs(ver);
                         }
                         catch (Exception e)
