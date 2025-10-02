@@ -39,6 +39,23 @@ namespace WinNvm
                     }
                 },
                 {
+                    "l|list",
+                    "To list all installed versions of NodeJS",
+                    ver => 
+                    {
+                        try
+                        {
+                            NvmUtils.ValidateEnvironment();
+                            NvmUtils.PrintListOfInstalledNodeVersions();
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("ERR: " + e.Message);
+                            Environment.Exit(2);
+                        }
+                    }
+                },
+                {
                     "u|use=",
                     "To use the given version of NodeJS",
                     ver =>

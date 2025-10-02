@@ -14,6 +14,50 @@ namespace WinNvm
 {
     internal static class NvmUtils
     {
+        // Regex to match version folder names like "v14.17.0" or "v16.13.1"
+        private static readonly Regex VersionFolderRegex = new Regex(@"^v\d+\.\d+\.\d+(-\S+)?$", RegexOptions.Compiled);
+
+        private static List<string> GetInstalledNodeVersions(string nvmHome)
+        {
+            var installedVersion = new List<string>();
+
+            foreach (var dir in Directory.EnumerateDirectories(nvmHome))
+            {
+                // Get folder name (not full path)
+                var folderName = Path.GetFileName(dir);
+                if (folderName == null)
+                    continue;
+
+                if (VersionFolderRegex.IsMatch(folderName))
+                {   
+                    installedVersion.Add(folderName);
+                }
+            }
+
+             // sort versions (lexical or semver)
+            installedVersion.Sort(CompareVersionFolderNames);
+
+            return installedVersion;
+
+        }
+
+        /// <summary>
+        /// Compare two version folder names (e.g. "v14.17.0" vs "v16.13.1") by semantic version.
+        /// Returns negative if a &lt; b.
+        /// </summary>
+        private static int CompareVersionFolderNames(string a, string b)
+        {
+            // remove leading 'v'
+            string sa = a.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? a.Substring(1) : a;
+            string sb = b.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? b.Substring(1) : b;
+
+            if (Version.TryParse(sa, out var va) && Version.TryParse(sb, out var vb))
+            {
+                return va.CompareTo(vb);
+            }
+            // fallback to string compare
+            return StringComparer.OrdinalIgnoreCase.Compare(a, b);
+        }
 
         private static void ExtractToNvmHome(string zipFileName, string verToInstall)
         {
@@ -65,6 +109,26 @@ namespace WinNvm
             );
         }
 
+        internal static void PrintListOfInstalledNodeVersions()
+        {
+            var versions = GetInstalledNodeVersions(Constants.NvmHome);
+
+            if (versions.Count == 0)
+            {
+                Console.WriteLine($"No Node versions found in {Constants.NvmHome}.");
+            }
+            else
+            {
+                Console.WriteLine();
+                Console.WriteLine("Installed Node versions:");
+                Console.WriteLine();
+                foreach (var version in versions)
+                {
+                    Console.WriteLine($"  {version}");
+                }
+            }
+        }
+
         internal static void ShowHelp()
         {
             Console.WriteLine();
@@ -73,6 +137,7 @@ namespace WinNvm
             Console.WriteLine("Options:");
             Console.WriteLine(@"
     -i, --install <verison>    To install a new version of NodeJS
+    -l, --list                 To list all installed versions of NodeJS
     -u, --use <version>        To use the given version of NodeJS
     -r, --remove <version>     To uninstall a version of NodeJS
     -h, --help                 Show this message
