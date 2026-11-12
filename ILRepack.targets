@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Target Name="ILRepack" AfterTargets="Build" Condition="$(Configuration.Contains('Release')) and '$(IsCrossTargetingBuild)' != 'true'">
+        <ItemGroup>
+            <InputAssemblies Include="$(OutputPath)$(TargetName)$(TargetExt)"/>
+            <InputAssemblies Include="$(OutputPath)*.dll" Exclude="$(OutputPath)$(TargetName)$(TargetExt)"/>
+        </ItemGroup>
+
+        <ILRepack
+            Parallel="true"
+            DebugInfo="true"
+            MergeIlLinkerFiles="true"
+            AllowDuplicateResources="false"
+            InputAssemblies="@(InputAssemblies)"
+            TargetKind="SameAsPrimaryAssembly"
+            KeyFile="$(KeyFile)"
+            OutputFile="$(OutputPath)$(TargetName)$(TargetExt)"
+        />
+    </Target>
+
+    <Target
+        AfterTargets="ILRepack"
+        Name="CleanReferenceCopyLocalPaths"
+        Condition="$(Configuration.Contains('Release')) and '$(ClearOutputDirectory)' != 'False' and '$(IsCrossTargetingBuild)' != 'true'">
+        <Delete Files="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')"/>
+        <ItemGroup>
+            <Directories Include="$([System.IO.Directory]::GetDirectories('$(OutDir)%(DestinationSubDirectory)', '*', System.IO.SearchOption.AllDirectories))"/>
+            <Directories>
+                <Files>$([System.IO.Directory]::GetFiles("%(Directories.Identity)", "*", System.IO.SearchOption.AllDirectories).get_Length())</Files>
+            </Directories>
+        </ItemGroup>
+        <RemoveDir Directories="@(Directories)" Condition="%(Files)=='0'"/>
+    </Target>
+</Project>
