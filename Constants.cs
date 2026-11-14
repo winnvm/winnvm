@@ -1,11 +1,9 @@
-﻿namespace WinNvm
+namespace WinNvm
 {
     public static class Constants
     {
         public const string RcFileName = ".winnvmrc";
-        public static RcFileData RcFileData;
-        public static string NvmHome = null;
-        public static string NvmSymLink = null;
+        public const string DefaultNodeMirror = "https://nodejs.org/dist/";
 
         public const string NvmHomeVarName = "NVM_HOME";
         public const string NvmSymLinkVarName = "NVM_SYMLINK";

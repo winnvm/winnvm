@@ -1,125 +1,135 @@
-﻿using System;
+using System;
+using System.Threading.Tasks;
 using Mono.Options;
 
 namespace WinNvm
 {
     internal static class Program
     {
-        public static void Main(string[] args)
+        private enum CommandAction
         {
+            None,
+            Install,
+            List,
+            Use,
+            Remove,
+            Help,
+            Version
+        }
 
+        public static async Task<int> Main(string[] args)
+        {
             try
             {
-                NvmUtils.LoadRcJson();
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine("ERR: " + exception.Message);
-                Environment.Exit(2);
-            }
+                var rcData = NvmUtils.LoadRcJson();
 
-            //These are the available options, not that they set the variables
-            var options = new OptionSet
-            {
+                var action = CommandAction.None;
+                string? targetVersion = null;
+
+                void SetAction(CommandAction next, string? version = null)
                 {
-                    "i|install=",
-                    "To install a new version of NodeJS",
-                    ver => 
+                    if (action != CommandAction.None)
                     {
-                        try
-                        {
-                            NvmUtils.ValidateEnvironment();
-                            NvmUtils.ValidateNodeVersionAndDownload(ver);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("ERR: " + e.Message);
-                            Environment.Exit(2);
-                        }
+                        throw new WinNvmException("Specify only one command option at a time.");
                     }
-                },
-                {
-                    "l|list",
-                    "To list all installed versions of NodeJS",
-                    ver => 
-                    {
-                        try
-                        {
-                            NvmUtils.ValidateEnvironment();
-                            NvmUtils.PrintListOfInstalledNodeVersions();
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("ERR: " + e.Message);
-                            Environment.Exit(2);
-                        }
-                    }
-                },
-                {
-                    "u|use=",
-                    "To use the given version of NodeJS",
-                    ver =>
-                    {
-                        try
-                        {
-                            NvmUtils.ValidateEnvironment();
-                            NvmUtils.ValidateNodeVersionAndUse(ver);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("ERR: " + e.Message);
-                            Environment.Exit(2);
-                        }
-                    }
-                },
-                {
-                    "r|remove=",
-                    "To uninstall a version of NodeJS",
-                    ver =>
-                    {
-                        try
-                        {
-                            NvmUtils.ValidateEnvironment();
-                            NvmUtils.UninstallNodeJs(ver);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("ERR: " + e.Message);
-                            Environment.Exit(2);
-                        }
-                    }
-                },
-                {
-                    "h|help",
-                    "Show this message",
-                    h =>
-                    {
-                        NvmUtils.ShowHelp();
-                        Environment.Exit(0);
-                    }
-                },
-                {
-                    "v|version",
-                    "Display Version",
-                    version => NvmUtils.PrintVersion()
+
+                    action = next;
+                    targetVersion = version;
                 }
-            };
 
-            try
-            {
+                var options = new OptionSet
+                {
+                    {
+                        "i|install=",
+                        "To install a new version of NodeJS",
+                        ver => SetAction(CommandAction.Install, ver)
+                    },
+                    {
+                        "l|list",
+                        "To list all installed versions of NodeJS",
+                        _ => SetAction(CommandAction.List)
+                    },
+                    {
+                        "u|use=",
+                        "To use the given version of NodeJS",
+                        ver => SetAction(CommandAction.Use, ver)
+                    },
+                    {
+                        "r|remove=",
+                        "To uninstall a version of NodeJS",
+                        ver => SetAction(CommandAction.Remove, ver)
+                    },
+                    {
+                        "h|help",
+                        "Show this message",
+                        _ => SetAction(CommandAction.Help)
+                    },
+                    {
+                        "v|version",
+                        "Display Version",
+                        _ => SetAction(CommandAction.Version)
+                    }
+                };
+
                 var extra = options.Parse(args);
-                if (extra != null && extra.Count > 0)
+                if (extra.Count > 0)
                 {
-                    throw new WinNvmException("Invalid options");
+                    throw new WinNvmException($"Invalid option(s): {string.Join(" ", extra)}");
+                }
+
+                switch (action)
+                {
+                    case CommandAction.None:
+                    case CommandAction.Help:
+                        NvmUtils.ShowHelp();
+                        return 0;
+
+                    case CommandAction.Version:
+                        NvmUtils.PrintVersion();
+                        return 0;
+
+                    case CommandAction.Install:
+                    {
+                        var env = NvmUtils.ValidateEnvironment();
+                        await NvmUtils.ValidateNodeVersionAndDownloadAsync(targetVersion!, rcData, env);
+                        return 0;
+                    }
+
+                    case CommandAction.List:
+                    {
+                        var env = NvmUtils.ValidateEnvironment();
+                        NvmUtils.PrintListOfInstalledNodeVersions(env);
+                        return 0;
+                    }
+
+                    case CommandAction.Use:
+                    {
+                        var env = NvmUtils.ValidateEnvironment();
+                        NvmUtils.ValidateNodeVersionAndUse(targetVersion!, env);
+                        return 0;
+                    }
+
+                    case CommandAction.Remove:
+                    {
+                        var env = NvmUtils.ValidateEnvironment();
+                        NvmUtils.UninstallNodeJs(targetVersion!, env);
+                        return 0;
+                    }
+
+                    default:
+                        NvmUtils.ShowHelp();
+                        return 0;
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine("ERR: Try 'winnvm --help' for more information.");
-                Environment.Exit(2);
+                Console.Error.WriteLine($"ERR: {ex.Message}");
+                if (ex is OptionException || ex is WinNvmException)
+                {
+                    Console.Error.WriteLine("Try 'winnvm --help' for more information.");
+                }
+                return 2;
             }
-            Environment.Exit(0);
         }
     }
 }
