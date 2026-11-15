@@ -34,6 +34,8 @@ jobs:
       - name: Package Release Assets
         shell: powershell
         run: |
+          Copy-Item ./publish/win-x64/WinNvm.exe ./WinNvm-${{ github.ref_name }}-win-x64.exe
+          Copy-Item ./publish/win-arm64/WinNvm.exe ./WinNvm-${{ github.ref_name }}-win-arm64.exe
           Compress-Archive -Path ./publish/win-x64/WinNvm.exe -DestinationPath ./WinNvm-${{ github.ref_name }}-win-x64.zip
           Compress-Archive -Path ./publish/win-arm64/WinNvm.exe -DestinationPath ./WinNvm-${{ github.ref_name }}-win-arm64.zip
 
@@ -167,8 +169,8 @@ jobs:
               "release", "create", $tag,
               "./WinNvm-$tag-win-x64.zip",
               "./WinNvm-$tag-win-arm64.zip",
-              "./publish/win-x64/WinNvm.exe#WinNvm-$tag-win-x64.exe",
-              "./publish/win-arm64/WinNvm.exe#WinNvm-$tag-win-arm64.exe",
+              "./WinNvm-$tag-win-x64.exe",
+              "./WinNvm-$tag-win-arm64.exe",
               "--title", $releaseTitle,
               "--notes-file", "release-notes.md"
           )
