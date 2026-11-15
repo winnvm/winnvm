@@ -31,11 +31,26 @@ jobs:
       - name: Publish WinNvm (win-arm64 Single-File)
         run: dotnet publish WinNvm.csproj -c Release -r win-arm64 -p:PublishSingleFile=true --no-self-contained -o ./publish/win-arm64
 
+      - name: Build MSI Installers
+        shell: powershell
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ($tag -match '^v?(\d+\.\d+\.\d+)') {
+              $msiVersion = "$($Matches[1]).0"
+          } else {
+              $msiVersion = "2.0.0.0"
+          }
+          $root = (Get-Location).Path
+          dotnet build installer/WinNvm.Installer.wixproj -c Release -p:InstallerPlatform=x64 -p:Version=$msiVersion -p:PublishDir="$root\publish\win-x64" -o ./installer-out/win-x64
+          dotnet build installer/WinNvm.Installer.wixproj -c Release -p:InstallerPlatform=arm64 -p:Version=$msiVersion -p:PublishDir="$root\publish\win-arm64" -o ./installer-out/win-arm64
+
       - name: Package Release Assets
         shell: powershell
         run: |
           Copy-Item ./publish/win-x64/WinNvm.exe ./WinNvm-${{ github.ref_name }}-win-x64.exe
           Copy-Item ./publish/win-arm64/WinNvm.exe ./WinNvm-${{ github.ref_name }}-win-arm64.exe
+          Copy-Item ./installer-out/win-x64/WinNvm.msi ./WinNvm-${{ github.ref_name }}-win-x64.msi
+          Copy-Item ./installer-out/win-arm64/WinNvm.msi ./WinNvm-${{ github.ref_name }}-win-arm64.msi
           Compress-Archive -Path ./publish/win-x64/WinNvm.exe -DestinationPath ./WinNvm-${{ github.ref_name }}-win-x64.zip
           Compress-Archive -Path ./publish/win-arm64/WinNvm.exe -DestinationPath ./WinNvm-${{ github.ref_name }}-win-arm64.zip
 
@@ -171,6 +186,8 @@ jobs:
               "./WinNvm-$tag-win-arm64.zip",
               "./WinNvm-$tag-win-x64.exe",
               "./WinNvm-$tag-win-arm64.exe",
+              "./WinNvm-$tag-win-x64.msi",
+              "./WinNvm-$tag-win-arm64.msi",
               "--title", $releaseTitle,
               "--notes-file", "release-notes.md"
           )

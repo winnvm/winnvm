@@ -1,0 +1,100 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="WinNvm"
+           Manufacturer="WinNvm"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="E4B8A9C2-5F31-4D8A-9C1E-7A2B6D4E8F01"
+           Scope="perUser">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Configurable properties for UI and silent (msiexec) installs -->
+    <Property Id="NVM_HOME" Secure="yes" />
+    <Property Id="NVM_SYMLINK" Secure="yes" />
+
+    <!-- Set defaults only if not already provided via msiexec command line -->
+    <SetProperty Id="NVM_HOME"
+                 Value="[LocalAppDataFolder]WinNvm"
+                 After="AppSearch"
+                 Condition="NOT NVM_HOME" />
+    <SetProperty Id="NVM_SYMLINK"
+                 Value="[LocalAppDataFolder]nodejs"
+                 After="AppSearch"
+                 Condition="NOT NVM_SYMLINK" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="WinNvm" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="WinNvmExeComponent" Guid="7A3E1D90-4C2B-4F8E-9A11-3C5D7E9F0B24">
+        <RegistryValue Root="HKCU"
+                       Key="Software\WinNvm"
+                       Name="Installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+        <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
+        <File Id="WinNvmExe" Source="$(var.PublishDir)\WinNvm.exe" />
+      </Component>
+
+      <Component Id="NvmEnvVarsComponent" Guid="9B4F2E81-6D3C-4A9F-8B22-4D6E8F0A1C35">
+        <RegistryValue Root="HKCU"
+                       Key="Software\WinNvm"
+                       Name="EnvConfigured"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+        <Environment Id="EnvNvmHome"
+                     Name="NVM_HOME"
+                     Value="[NVM_HOME]"
+                     Permanent="no"
+                     Part="all"
+                     Action="set"
+                     System="no" />
+        <Environment Id="EnvNvmSymlink"
+                     Name="NVM_SYMLINK"
+                     Value="[NVM_SYMLINK]"
+                     Permanent="no"
+                     Part="all"
+                     Action="set"
+                     System="no" />
+        <Environment Id="EnvPathInstallDir"
+                     Name="PATH"
+                     Value="[INSTALLFOLDER]"
+                     Permanent="no"
+                     Part="last"
+                     Action="set"
+                     System="no" />
+        <Environment Id="EnvPathNvmHome"
+                     Name="PATH"
+                     Value="[NVM_HOME]"
+                     Permanent="no"
+                     Part="last"
+                     Action="set"
+                     System="no" />
+        <Environment Id="EnvPathNvmSymlink"
+                     Name="PATH"
+                     Value="[NVM_SYMLINK]"
+                     Permanent="no"
+                     Part="last"
+                     Action="set"
+                     System="no" />
+      </Component>
+    </ComponentGroup>
+
+    <Feature Id="ProductFeature" Title="WinNvm" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <UI>
+      <!-- Skip LicenseAgreementDlg and insert NvmConfigDlg after InstallDirDlg -->
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2" />
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2" />
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="NvmConfigDlg" Order="5" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="NvmConfigDlg" Order="2" />
+    </UI>
+  </Package>
+</Wix>
