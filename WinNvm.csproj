@@ -18,13 +18,9 @@
 
   <!-- Settings applied when publishing as a single file -->
   <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
-    <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+    <SelfContained Condition="'$(SelfContained)' == ''">true</SelfContained>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile Condition="'$(SelfContained)' == 'true'">true</EnableCompressionInSingleFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Mono.Options" Version="6.12.0.148" />
-  </ItemGroup>
 
 </Project>
