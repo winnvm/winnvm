@@ -26,10 +26,10 @@ jobs:
             10.0.x
 
       - name: Publish WinNvm (win-x64 Single-File)
-        run: dotnet publish WinNvm.csproj -c Release -r win-x64 -p:PublishSingleFile=true --no-self-contained -o ./publish/win-x64
+        run: dotnet publish WinNvm.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained -o ./publish/win-x64
 
       - name: Publish WinNvm (win-arm64 Single-File)
-        run: dotnet publish WinNvm.csproj -c Release -r win-arm64 -p:PublishSingleFile=true --no-self-contained -o ./publish/win-arm64
+        run: dotnet publish WinNvm.csproj -c Release -r win-arm64 -p:PublishSingleFile=true --self-contained -o ./publish/win-arm64
 
       - name: Build MSI Installers
         shell: powershell
