@@ -5,48 +5,195 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: windows-latest
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v4
+      - name: Publish WinNvm (win-x64 Single-File)
+        run: dotnet publish WinNvm.csproj -c Release -r win-x64 -p:PublishSingleFile=true --no-self-contained -o ./publish/win-x64
 
-      - name: Restore NuGet packages
-        run: nuget restore WinNvm.sln
+      - name: Publish WinNvm (win-arm64 Single-File)
+        run: dotnet publish WinNvm.csproj -c Release -r win-arm64 -p:PublishSingleFile=true --no-self-contained -o ./publish/win-arm64
 
-      - name: Build solution
-        run: msbuild WinNvm.sln /p:Configuration=Release /p:Platform="Any CPU" /m
-
-      - name: Zip build artifacts
-        run: |
-          Compress-Archive -Path ./bin/Release/* -DestinationPath ./WinNvm.zip
+      - name: Build MSI Installers
         shell: powershell
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ($tag -match '^v?(\d+\.\d+\.\d+)') {
+              $msiVersion = "$($Matches[1]).0"
+          } else {
+              $msiVersion = "2.0.0.0"
+          }
+          $root = (Get-Location).Path
+          dotnet build installer/WinNvm.Installer.wixproj -c Release -p:InstallerPlatform=x64 -p:Version=$msiVersion -p:PublishDir="$root\publish\win-x64" -o ./installer-out/win-x64
+          dotnet build installer/WinNvm.Installer.wixproj -c Release -p:InstallerPlatform=arm64 -p:Version=$msiVersion -p:PublishDir="$root\publish\win-arm64" -o ./installer-out/win-arm64
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Package Release Assets
+        shell: powershell
+        run: |
+          Copy-Item ./publish/win-x64/WinNvm.exe ./WinNvm-${{ github.ref_name }}-win-x64.exe
+          Copy-Item ./publish/win-arm64/WinNvm.exe ./WinNvm-${{ github.ref_name }}-win-arm64.exe
+          Copy-Item ./installer-out/win-x64/WinNvm.msi ./WinNvm-${{ github.ref_name }}-win-x64.msi
+          Copy-Item ./installer-out/win-arm64/WinNvm.msi ./WinNvm-${{ github.ref_name }}-win-arm64.msi
+          Compress-Archive -Path ./publish/win-x64/WinNvm.exe -DestinationPath ./WinNvm-${{ github.ref_name }}-win-x64.zip
+          Compress-Archive -Path ./publish/win-arm64/WinNvm.exe -DestinationPath ./WinNvm-${{ github.ref_name }}-win-arm64.zip
+
+      - name: Generate Changelog & Create GitHub Release
+        shell: powershell
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $repo = "${{ github.repository }}"
+          $isPrerelease = $false
+          $releaseTitle = "Release $tag"
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./WinNvm.zip
-          asset_name: WinNvm-${{ github.ref_name }}.zip
-          asset_content_type: application/zip
+          if ($tag -match '-alpha[.-]?\d+$') {
+              $isPrerelease = $true
+              $releaseTitle = "Release $tag (Alpha)"
+              Write-Host "Tag $tag matched alpha pre-release."
+          } elseif ($tag -match '-beta[.-]?\d+$') {
+              $isPrerelease = $true
+              $releaseTitle = "Release $tag (Beta)"
+              Write-Host "Tag $tag matched beta pre-release."
+          } else {
+              Write-Host "Tag $tag is a standard production release."
+          }
+
+          # Find the previous tag before this one
+          $prevTag = git describe --tags --abbrev=0 "$tag^" 2>$null
+
+          # Try querying GitHub API for commits to resolve real GitHub usernames
+          $commitsData = @()
+          try {
+              if ($prevTag) {
+                  Write-Host "Fetching compare $prevTag...$tag from GitHub API"
+                  $resp = gh api "repos/$repo/compare/$prevTag...$tag" | ConvertFrom-Json
+                  $commitsData = $resp.commits
+              } else {
+                  Write-Host "Fetching commits up to $tag from GitHub API"
+                  $resp = gh api "repos/$repo/commits?sha=$tag&per_page=100" | ConvertFrom-Json
+                  $commitsData = $resp
+              }
+          } catch {
+              Write-Warning "GitHub API query failed, falling back to git log: $_"
+          }
+
+          $prList = [System.Collections.Generic.List[string]]::new()
+          $commitList = [System.Collections.Generic.List[string]]::new()
+
+          if ($commitsData -and $commitsData.Count -gt 0) {
+              # GitHub compare API returns oldest to newest; reverse so latest is at the top
+              [array]::Reverse($commitsData)
+
+              foreach ($c in $commitsData) {
+                  $fullHash = $c.sha
+                  $shortHash = $fullHash.Substring(0, [Math]::Min(7, $fullHash.Length))
+                  $subject = ($c.commit.message -split "`r?`n")[0]
+
+                  # Use real GitHub @handle if account is linked, otherwise Git author name without '@'
+                  if ($c.author -and $c.author.login) {
+                      $authorHandle = "@$($c.author.login)"
+                  } elseif ($c.commit.author -and $c.commit.author.name) {
+                      $authorHandle = $c.commit.author.name
+                  } else {
+                      $authorHandle = "unknown"
+                  }
+
+                  $commitUrl = "https://github.com/$repo/commit/$fullHash"
+                  $entry = "* $subject ([$shortHash]($commitUrl)) by $authorHandle"
+
+                  if ($subject -match 'Merge pull request #(\d+)' -or $subject -match '\(#(\d+)\)') {
+                      $prList.Add($entry)
+                  } else {
+                      $commitList.Add($entry)
+                  }
+              }
+          } else {
+              # Fallback to local git log
+              $range = if ($prevTag) { "$prevTag..$tag" } else { $tag }
+              $rawCommits = git log $range --pretty=format:"%H|%h|%s|%an"
+              if ($rawCommits) {
+                  foreach ($line in ($rawCommits -split "`r?`n")) {
+                      if ([string]::IsNullOrWhiteSpace($line)) { continue }
+                      $parts = $line -split '\|', 4
+                      if ($parts.Length -lt 4) { continue }
+                      $fullHash = $parts[0]
+                      $shortHash = $parts[1]
+                      $subject = $parts[2]
+                      $author = $parts[3]
+
+                      $commitUrl = "https://github.com/$repo/commit/$fullHash"
+                      $entry = "* $subject ([$shortHash]($commitUrl)) by $author"
+
+                      if ($subject -match 'Merge pull request #(\d+)' -or $subject -match '\(#(\d+)\)') {
+                          $prList.Add($entry)
+                      } else {
+                          $commitList.Add($entry)
+                      }
+                  }
+              }
+          }
+
+          $notes = [System.Text.StringBuilder]::new()
+          [void]$notes.AppendLine("### What's Changed`n")
+
+          if ($prList.Count -gt 0) {
+              [void]$notes.AppendLine("#### Pull Requests")
+              foreach ($pr in $prList) {
+                  [void]$notes.AppendLine($pr)
+              }
+              [void]$notes.AppendLine("")
+          }
+
+          if ($commitList.Count -gt 0) {
+              if ($prList.Count -gt 0) {
+                  [void]$notes.AppendLine("#### Commits")
+              }
+              foreach ($c in $commitList) {
+                  [void]$notes.AppendLine($c)
+              }
+              [void]$notes.AppendLine("")
+          }
+
+          if ($prevTag) {
+              [void]$notes.AppendLine("**Full Changelog**: https://github.com/$repo/compare/$prevTag...$tag")
+          } else {
+              [void]$notes.AppendLine("**Full Changelog**: https://github.com/$repo/commits/$tag")
+          }
+
+          $notes.ToString() | Out-File -FilePath release-notes.md -Encoding utf8
+
+          $ghArgs = @(
+              "release", "create", $tag,
+              "./WinNvm-$tag-win-x64.zip",
+              "./WinNvm-$tag-win-arm64.zip",
+              "./WinNvm-$tag-win-x64.exe",
+              "./WinNvm-$tag-win-arm64.exe",
+              "./WinNvm-$tag-win-x64.msi",
+              "./WinNvm-$tag-win-arm64.msi",
+              "--title", $releaseTitle,
+              "--notes-file", "release-notes.md"
+          )
+
+          if ($isPrerelease) {
+              $ghArgs += "--prerelease"
+          }
+
+          gh @ghArgs
