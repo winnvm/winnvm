@@ -1,8 +1,8 @@
-name: .NET Framework 4.8 Build
+name: .NET Build
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ master, develop, dotnetcore ]
   pull_request:
     branches: [ master, develop ]
 
@@ -12,16 +12,27 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v3
-
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v4
-
-      - name: Restore NuGet packages
-        run: nuget restore WinNvm.sln
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Build solution
-        run: msbuild WinNvm.sln /p:Configuration=Release /p:Platform="Any CPU" /m
+        run: dotnet build WinNvm.sln -c Release
+
+      - name: Test Single-File Publish
+        run: dotnet publish WinNvm.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained -o ./publish
+
+      - name: Test MSI Build (win-x64)
+        shell: powershell
+        run: |
+          $root = (Get-Location).Path
+          dotnet build installer/WinNvm.Installer.wixproj -c Release -p:InstallerPlatform=x64 -p:PublishDir="$root\publish" -o ./installer-out/win-x64
+
+      - name: Verify Published Executable
+        run: dir .\publish
+        shell: cmd

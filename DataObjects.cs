@@ -1,16 +1,18 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace WinNvm
 {
     public class NodeVersions
     {
-        public string Version { get; set; }
-        public string Date { get; set; }
-        public List<string> Files { get; set; }
+        public string? Version { get; set; }
+        public string? Date { get; set; }
+        public List<string>? Files { get; set; }
     }
 
     public class RcFileData
     {
-        public string NodeMirror { get; set; }
+        public string? NodeMirror { get; set; }
     }
+
+    internal sealed record NvmEnvironment(string NvmHome, string NvmSymLink);
 }
