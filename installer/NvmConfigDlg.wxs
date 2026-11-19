@@ -1,0 +1,32 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+    <UI>
+      <Dialog Id="NvmConfigDlg" Width="370" Height="270" Title="!(loc.InstallDirDlg_Title)">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="240" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}WinNvm Environment Configuration" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="300" Height="15" Transparent="yes" NoPrefix="yes" Text="Configure NVM_HOME and NVM_SYMLINK environment variables." />
+
+        <Control Id="NvmHomeLabel" Type="Text" X="20" Y="60" Width="330" Height="15" NoPrefix="yes" Text="NVM_HOME (directory where Node.js versions are stored):" />
+        <Control Id="NvmHomeEdit" Type="Edit" X="20" Y="78" Width="330" Height="18" Property="NVM_HOME" />
+
+        <Control Id="NvmSymlinkLabel" Type="Text" X="20" Y="112" Width="330" Height="15" NoPrefix="yes" Text="NVM_SYMLINK (directory for the active Node.js symlink):" />
+        <Control Id="NvmSymlinkEdit" Type="Edit" X="20" Y="130" Width="330" Height="18" Property="NVM_SYMLINK" />
+
+        <Control Id="PathNote" Type="Text" X="20" Y="168" Width="330" Height="30" NoPrefix="yes" Text="NVM_HOME, NVM_SYMLINK, and the WinNvm install folder will be added to your user PATH." />
+
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)">
+          <Publish Event="NewDialog" Value="InstallDirDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)">
+          <Publish Event="NewDialog" Value="VerifyReadyDlg" Condition="NVM_HOME AND NVM_SYMLINK" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+    </UI>
+  </Fragment>
+</Wix>
